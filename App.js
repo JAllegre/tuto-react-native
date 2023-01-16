@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import Constants from "expo-constants";
 import { StyleSheet, Text, View, Platform } from "react-native";
@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { captureRef } from "react-native-view-shot";
 import { saveToLibraryAsync, usePermissions } from "expo-media-library";
 import domToImage from "dom-to-image";
+import { Audio } from "expo-av";
 
 export default function App() {
   const [selectedImageUri, setSelectedImageUri] = useState("");
@@ -22,6 +23,20 @@ export default function App() {
   const [pickedEmoji, setPickedEmoji] = useState(null);
   const imageRef = useRef();
   const [status, requestPermission] = usePermissions();
+  const [sound, setSound] = useState();
+
+  async function playSound() {
+    console.log("Loading Sound");
+
+    const { sound } = await Audio.Sound.createAsync(
+      require("./assets/Hello.mp3")
+    );
+    setSound(sound);
+
+    console.log("Playing Sound");
+    await sound.playAsync();
+  }
+
   const onAddSticker = () => {
     setIsModalVisible(true);
   };
@@ -86,6 +101,15 @@ export default function App() {
     requestPermission();
   }
 
+  useEffect(() => {
+    return sound
+      ? () => {
+          console.log("Unloading Sound");
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
   const now = new Date();
   const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
   return (
@@ -125,6 +149,7 @@ export default function App() {
             label="Use this photo"
             onPress={() => setShowAppOptions(true)}
           />
+          <Button label="Play Sound" onPress={playSound} />
         </View>
       )}
       <EmojiPicker isVisible={isModalVisible} onClose={onModalClose}>
